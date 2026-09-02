@@ -145,7 +145,7 @@
   let state = 'ready';
   let score = 0, best = 0;
   let player, obstacles = [], particles = [], stars;
-  let speed = 5.5;
+  let speed = 4.0;
   let gravity = 0.85;
   let jumpV = -15.5;
   let dist = 0;
@@ -154,9 +154,10 @@
   let nextSpawnDist = 0;
 
   const PLAYER_SIZE = 34;
+  const JUMP_AIRTIME = 2*Math.abs(jumpV)/gravity; // frames spent airborne on a full jump
 
   function resetGame(){
-    score = 0; dist = 0; speed = 5.5; shake = 0;
+    score = 0; dist = 0; speed = 4.0; shake = 0;
     player = { x: W*0.2, y: groundY-PLAYER_SIZE, vy:0, onGround:true, tilt:0 };
     obstacles = [];
     particles = [];
@@ -174,14 +175,17 @@
   function updateScoreUI(){ scoreEl.textContent = score; }
 
   function scheduleNext(){
-    const minGap = 260 - Math.min(speed*8, 110);
-    nextSpawnDist = dist + minGap + Math.random()*140;
+    // guarantee enough room to land before the next obstacle arrives,
+    // no matter how fast the ground is currently scrolling
+    const safeGap = speed*JUMP_AIRTIME*1.08 + 46;
+    nextSpawnDist = dist + safeGap + Math.random()*(70 + speed*4);
   }
 
   function spawnObstacle(){
+    const difficultyT = Math.min(score/25, 1);
     const isTall = Math.random() < 0.4;
-    const h = isTall ? 54 + Math.random()*22 : 30 + Math.random()*14;
-    const w = 22 + Math.random()*14;
+    const h = isTall ? (44 + difficultyT*22 + Math.random()*16) : (24 + difficultyT*12 + Math.random()*10);
+    const w = 20 + Math.random()*12;
     const color = OBSTACLE_COLORS[obstacles.length % OBSTACLE_COLORS.length];
     obstacles.push({ x: W+40, y: groundY-h, w, h, color, passed:false });
   }
@@ -247,7 +251,7 @@
 
     if (state === 'playing'){
       dist += speed;
-      speed = Math.min(5.5 + dist*0.0016, 12.5);
+      speed = Math.min(4.0 + Math.max(dist-420, 0)*0.0011, 10.5);
 
       player.vy += gravity;
       player.y += player.vy;
@@ -275,7 +279,7 @@
         if (o.x < -60) obstacles.splice(i,1);
 
         // collision (slightly inset for fairness)
-        const px = player.x+6, py = player.y+6, pw = PLAYER_SIZE-12, ph = PLAYER_SIZE-12;
+        const px = player.x+9, py = player.y+9, pw = PLAYER_SIZE-18, ph = PLAYER_SIZE-18;
         if (px < o.x+o.w && px+pw > o.x && py < o.y+o.h && py+ph > o.y){
           fail();
         }
