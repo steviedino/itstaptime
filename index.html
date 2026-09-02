@@ -89,6 +89,9 @@
   .skyline-swatch{
     background: linear-gradient(180deg, #FF8B6B 0%, #8B6BFF 100%);
   }
+  .pulse-swatch{
+    background: radial-gradient(circle at 50% 45%, #FF6B5B 0%, #2A1B4A 70%);
+  }
 
   /* --- Today's game --- */
   .featured{
@@ -154,16 +157,20 @@
     <p>One tap. See how far you get.</p>
   </header>
   <!-- TODAY'S GAME — update this block each time you post a new game -->
-  <a class="featured" href="/games/skyline/">
+  <a class="featured" href="/games/pulse/">
     <div class="tag">Today</div>
-    <h2>Skyline</h2>
-    <p>Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.</p>
+    <h2>Pulse</h2>
+    <p>A ring grows from the center — tap the instant it lines up with the target. Miss the beat and it's over.</p>
     <span class="play">Play now</span>
   </a>
 
   <h3 class="section-label">Past games</h3>
   <div class="grid">
-    <div class="card empty">Yesterday's games will show up here</div>
+    <a class="card" href="/games/skyline/">
+      <div class="swatch skyline-swatch"></div>
+      <h2>Skyline</h2>
+      <p>Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.</p>
+    </a>
   </div>
 </div>
 </body>
