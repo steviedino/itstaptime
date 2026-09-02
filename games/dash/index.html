@@ -22,6 +22,26 @@
     user-select:none;
   }
   #wrap{ position:fixed; inset:0; }
+  .home-link{
+    position:absolute;
+    top: max(20px, env(safe-area-inset-top));
+    left: 18px;
+    z-index: 20;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color: var(--cream, #FDF6EC);
+    text-decoration:none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    background: rgba(255,255,255,0.08);
+    padding: 9px 16px 9px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .home-link:active{ background: rgba(255,255,255,0.18); }
   canvas{ position:absolute; inset:0; display:block; }
 
   #hud{
@@ -93,6 +113,7 @@
 <body>
 <div id="wrap">
   <canvas id="game"></canvas>
+  <a class="home-link" href="/" id="homeLink">&larr; Home</a>
   <div id="hud"><div id="score">0</div></div>
   <div id="hint">Tap to jump · or press Space</div>
 
@@ -244,6 +265,7 @@
     if (e.code === 'Space'){ e.preventDefault(); onTap(); }
   });
   document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
+  document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
   document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(restartCooldown<=0) startGame(); });
 
   function update(){
