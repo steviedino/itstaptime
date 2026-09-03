@@ -136,6 +136,7 @@
   .skyline-swatch{ background: linear-gradient(180deg, #FF8B6B 0%, #8B6BFF 100%); }
   .pulse-swatch{ background: radial-gradient(circle at 50% 45%, #FF6B5B 0%, #2A1B4A 70%); }
   .dash-swatch{ background: linear-gradient(135deg, #4EE2A0 0%, #1B1035 75%); }
+  .echo-swatch{ background: conic-gradient(from 90deg, #FF6B5B, #4EE2A0, #4DC9FF, #8B6BFF, #FF6B5B); }
 
   /* --- Today's game --- */
   .featured{
@@ -240,15 +241,26 @@
   </div>
 
   <!-- TODAY'S GAME — update this block each time you post a new game -->
-  <a class="featured fade-in" style="animation-delay:.2s" href="/games/dash/">
+  <a class="featured fade-in" style="animation-delay:.2s" href="/games/echo/">
     <div class="tag"><span class="pulse-dot"></span>Today</div>
-    <h2>Dash</h2>
-    <p>Tap to jump. Clear the obstacles as the pace keeps climbing — one clip and it's over.</p>
+    <h2>Echo</h2>
+    <p>Watch the colors flash, then tap them back in order. Each round adds one more to remember.</p>
     <span class="play">Play now</span>
   </a>
 
   <h3 class="section-label fade-in" style="animation-delay:.26s">Past games</h3>
   <div class="grid fade-in" style="animation-delay:.32s">
+    <a class="card" href="/games/dash/">
+      <div class="swatch dash-swatch">
+        <svg class="icon" width="26" height="24" viewBox="0 0 26 24" fill="none">
+          <rect x="1" y="16" width="24" height="2" fill="#FDF6EC" fill-opacity="0.6"/>
+          <rect x="3" y="4" width="9" height="9" rx="2.5" fill="#FDF6EC" fill-opacity="0.95"/>
+          <path d="M15 16 L20 8 L25 16" stroke="#FDF6EC" stroke-opacity="0.8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h2>Dash</h2>
+      <p>Tap to jump. Clear the obstacles as the pace keeps climbing.</p>
+    </a>
     <a class="card" href="/games/pulse/">
       <div class="swatch pulse-swatch">
         <svg class="icon" width="26" height="26" viewBox="0 0 26 26" fill="none">
