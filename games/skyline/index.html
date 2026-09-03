@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Skyline — It's Tap Time">
+<meta property="og:description" content="Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.">
+<meta property="og:image" content="https://itstaptime.com/assets/og-skyline.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Skyline — It's Tap Time">
+<meta name="twitter:description" content="Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.">
+<meta name="twitter:image" content="https://itstaptime.com/assets/og-skyline.png">
 <title>Skyline — Stack it up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -142,6 +150,45 @@
     font-weight:600;
     pointer-events:none;
   }
+  .best-line{
+    margin: -10px 0 20px;
+    font-size: 13px;
+    font-weight:600;
+    color: rgba(253,246,236,0.5);
+  }
+  .btn-row{ display:flex; gap:10px; justify-content:center; }
+  .btn.secondary{
+    background: rgba(255,255,255,0.1);
+    color: var(--cream);
+    box-shadow:none;
+  }
+  .new-best{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin: -8px 0 18px;
+  }
+  #toast{
+    position:absolute;
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+    left:50%; transform:translateX(-50%);
+    background: rgba(21,18,37,0.94);
+    color:var(--cream);
+    padding:10px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transition:opacity .2s ease;
+    pointer-events:none;
+    z-index: 30;
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
   .hidden{ display:none !important; }
 </style>
 </head>
@@ -158,6 +205,7 @@
     <div class="card">
       <h1>Skyline</h1>
       <p>Tap the moment the block lines up. Stack straight, build tall, don't miss the edge.</p>
+      <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
     </div>
   </div>
@@ -165,15 +213,18 @@
   <div class="overlay hidden" id="overScreen">
     <div class="card">
       <h1 id="overTitle">Toppled</h1>
+      <div class="new-best hidden" id="newBestTag">New best!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Height</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
       </div>
-      <button class="btn" id="retryBtn">Try again</button>
+      <div class="btn-row"><button class="btn" id="retryBtn">Try again</button><button class="btn secondary" id="shareBtn">Share score</button></div>
     </div>
   </div>
+  <div id="toast"></div>
 </div>
 
+<script src="/assets/tap-time.js"></script>
 <script>
 (function(){
   const canvas = document.getElementById('game');
@@ -186,6 +237,11 @@
   const bestScoreEl = document.getElementById('bestScore');
   const overTitle = document.getElementById('overTitle');
   const hint = document.getElementById('hint');
+  const shareBtn = document.getElementById('shareBtn');
+  const toastEl = document.getElementById('toast');
+  const bestLine = document.getElementById('bestLine');
+  const bestLineVal = document.getElementById('bestLineVal');
+  const newBestTag = document.getElementById('newBestTag');
 
   let W, H, DPR;
   function resize(){
@@ -225,7 +281,11 @@
   let falling = []; // pieces sliced off, animating fall
   let particles = [];
   let score = 0;
-  let best = 0;
+  let best = TapTime.getBest('skyline');
+  if (best > 0){
+    bestLineVal.textContent = best;
+    bestLine.classList.remove('hidden');
+  }
   let combo = 0;
   let shake = 0;
   let baseSpeed = 3.0;
@@ -299,6 +359,7 @@
     if (overlap < MIN_WIDTH){
       // total miss -> whole block falls
       falling.push({x:m.x, width:m.width, y, vy:0, vx: (m.dir)*2, rot:0, vr:(Math.random()-0.5)*0.2, color: colorForLevel(m.level), alpha:1});
+      if (window.TapTime){ TapTime.sfx.fail(); TapTime.haptics.fail(); }
       gameOver();
       return;
     }
@@ -313,6 +374,7 @@
       spawnBurst(newX+newWidth/2, y, colorForLevel(m.level));
       shake = Math.min(shake+3, 10);
       showCombo();
+      if (window.TapTime){ TapTime.sfx.success(); TapTime.haptics.success(); }
     } else {
       newX = left; newWidth = overlap;
       combo = 0;
@@ -325,6 +387,7 @@
         const w = (m.x+m.width)-right;
         falling.push({x:right, width:w, y, vy:0, vx:1.5, rot:0, vr:0.12, color: colorForLevel(m.level), alpha:1});
       }
+      if (window.TapTime){ TapTime.sfx.tap(); TapTime.haptics.tap(); }
     }
 
     stack.push({x:newX, width:newWidth, level:m.level});
@@ -354,10 +417,12 @@
 
   function gameOver(){
     state = 'over';
-    best = Math.max(best, score);
+    const result = TapTime.setBestIfHigher('skyline', score);
+    best = result.value;
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
     overTitle.textContent = score === 0 ? 'Toppled' : (score >= 15 ? 'Sky high!' : 'Toppled');
+    newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
     overScreen.classList.remove('hidden');
     hint.style.opacity = 0;
     restartCooldown = 24;
@@ -369,6 +434,7 @@
     overScreen.classList.add('hidden');
     hint.style.opacity = 1;
     state = 'playing';
+    if (window.TapTime) TapTime.recordPlay();
     resetGame();
   }
 
@@ -389,6 +455,20 @@
   document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
   document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
   document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(restartCooldown<=0) startGame(); });
+  let toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+  }
+  shareBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (!window.TapTime) return;
+    const method = TapTime.share('Skyline', score);
+    if (method === 'clipboard') showToast('Copied to clipboard!');
+    else if (method === 'none') showToast("Couldn't share on this browser");
+  });
 
   // ---- loop ----
   function update(){
