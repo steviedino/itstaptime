@@ -31,7 +31,7 @@
   }
   #wrap{ position:fixed; inset:0; }
   .home-link{
-    touch-action: manipulation;
+    touch-action: none;
     position:absolute;
     top: max(20px, env(safe-area-inset-top));
     left: 18px;
@@ -65,7 +65,7 @@
     border-radius: 24px;
     filter: brightness(0.5) saturate(0.85);
     transition: filter .08s ease, transform .08s ease;
-    touch-action: manipulation;
+    touch-action: none;
   }
   .quad.lit{
     filter: brightness(1.25) saturate(1.05);
@@ -137,7 +137,7 @@
   .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
   .btn{
     display:inline-block;
-    touch-action: manipulation;
+    touch-action: none;
     background: var(--accent);
     color: var(--ink);
     font-family: inherit;
@@ -341,6 +341,10 @@
       e.stopPropagation();
       onQuadTap(parseInt(q.dataset.i,10));
     });
+    // iOS Safari can still trigger its native double-tap-to-zoom gesture on
+    // fast repeated taps even with touch-action set, unless touchend is also
+    // explicitly prevented — belt-and-suspenders fix alongside pointerdown.
+    q.addEventListener('touchend', (e)=>{ e.preventDefault(); }, { passive:false });
   });
 
   function fail(){
