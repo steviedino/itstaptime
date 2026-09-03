@@ -371,6 +371,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1800);
   }
+  shareBtn.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
   shareBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if (!window.TapTime) return;
