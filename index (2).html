@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Dash — It's Tap Time</title>
+<title>Pulse — It's Tap Time</title>
 <meta property="og:type" content="website">
-<meta property="og:title" content="Dash — It's Tap Time">
-<meta property="og:description" content="Tap to jump. Clear the obstacles as the pace keeps climbing.">
-<meta property="og:image" content="https://itstaptime.com/assets/og-dash.png">
+<meta property="og:title" content="Pulse — It's Tap Time">
+<meta property="og:description" content="A ring grows from the center — tap the instant it lines up with the target.">
+<meta property="og:image" content="https://itstaptime.com/assets/og-pulse.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Dash — It's Tap Time">
-<meta name="twitter:description" content="Tap to jump. Clear the obstacles as the pace keeps climbing.">
-<meta name="twitter:image" content="https://itstaptime.com/assets/og-dash.png">
+<meta name="twitter:title" content="Pulse — It's Tap Time">
+<meta name="twitter:description" content="A ring grows from the center — tap the instant it lines up with the target.">
+<meta name="twitter:image" content="https://itstaptime.com/assets/og-pulse.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
   *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
   html,body{
     margin:0; padding:0; height:100%; overflow:hidden;
-    background: linear-gradient(180deg, #1B1035 0%, #2A1B4A 60%, #0A081A 100%);
+    background: radial-gradient(circle at 50% 42%, #2A1B4A 0%, #1B1035 45%, #0A081A 100%);
     font-family:'Space Grotesk', system-ui, sans-serif;
     touch-action:none;
     user-select:none;
@@ -66,6 +66,19 @@
     text-shadow: 0 2px 18px rgba(0,0,0,0.35);
     letter-spacing: -0.01em;
   }
+  #combo{
+    position:absolute;
+    top: calc(max(22px, env(safe-area-inset-top)) + 62px);
+    left:0; right:0;
+    text-align:center;
+    color:#FFD37A;
+    font-weight:600;
+    font-size:16px;
+    opacity:0;
+    transition: opacity .15s ease;
+    pointer-events:none;
+  }
+  #combo.show{ opacity:1; }
 
   .overlay{
     position:absolute; inset:0;
@@ -85,9 +98,23 @@
     width: 100%;
     box-shadow: 0 20px 60px rgba(0,0,0,0.35);
   }
-  .card h1{ color:var(--cream); font-size: 30px; margin: 0 0 6px; font-weight: 700; }
-  .card p{ color: rgba(253,246,236,0.72); font-size: 15px; line-height:1.5; margin: 0 0 22px; font-weight: 500; }
-  .stat-row{ display:flex; justify-content:center; gap: 34px; margin-bottom: 24px; }
+  .card h1{
+    color:var(--cream);
+    font-size: 30px;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .card p{
+    color: rgba(253,246,236,0.72);
+    font-size: 15px;
+    line-height:1.5;
+    margin: 0 0 22px;
+    font-weight: 500;
+  }
+  .stat-row{
+    display:flex; justify-content:center; gap: 34px;
+    margin-bottom: 24px;
+  }
   .stat{ text-align:center; }
   .stat .num{ color:var(--cream); font-size: 34px; font-weight:700; line-height:1; }
   .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
@@ -161,13 +188,15 @@
 <div id="wrap">
   <canvas id="game"></canvas>
   <a class="home-link" href="/" id="homeLink">&larr; Home</a>
+
   <div id="hud"><div id="score">0</div></div>
-  <div id="hint">Tap to jump · or press Space</div>
+  <div id="combo">PERFECT STREAK</div>
+  <div id="hint">Tap when the ring lines up · or press Space</div>
 
   <div class="overlay" id="startScreen">
     <div class="card">
-      <h1>Dash</h1>
-      <p>Tap to jump. Clear the obstacles, don't clip one.</p>
+      <h1>Pulse</h1>
+      <p>A ring grows from the center. Tap the instant it lines up with the target ring.</p>
       <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
     </div>
@@ -175,10 +204,10 @@
 
   <div class="overlay hidden" id="overScreen">
     <div class="card">
-      <h1 id="overTitle">Wiped out</h1>
+      <h1 id="overTitle">Off beat</h1>
       <div class="new-best hidden" id="newBestTag">New best!</div>
       <div class="stat-row">
-        <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Distance</div></div>
+        <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Hits</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
       </div>
       <div class="btn-row"><button class="btn" id="retryBtn">Try again</button><button class="btn secondary" id="shareBtn">Share score</button></div>
@@ -193,6 +222,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
   const startScreen = document.getElementById('startScreen');
   const overScreen = document.getElementById('overScreen');
   const finalScoreEl = document.getElementById('finalScore');
@@ -205,102 +235,104 @@
   const toastEl = document.getElementById('toast');
   const hint = document.getElementById('hint');
 
-  let W, H, DPR, groundY;
+  let W, H, DPR, CX, CY;
   function resize(){
     DPR = Math.min(window.devicePixelRatio || 1, 2.5);
     W = window.innerWidth; H = window.innerHeight;
     canvas.width = W * DPR; canvas.height = H * DPR;
     canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
     ctx.setTransform(DPR,0,0,DPR,0,0);
-    groundY = H*0.72;
+    CX = W/2; CY = H*0.46;
   }
   window.addEventListener('resize', resize);
   resize();
 
-  const OBSTACLE_COLORS = ['#FF6B5B','#FFB84D','#4EE2A0','#4DC9FF','#8B6BFF','#FF5B9F','#FFD866'];
+  const RING_COLORS = ['#FF6B5B','#FFB84D','#4EE2A0','#4DC9FF','#8B6BFF','#FF5B9F','#FFD866'];
+  function colorForScore(s){ return RING_COLORS[s % RING_COLORS.length]; }
 
   let state = 'ready';
-  let score = 0, best = TapTime.getBest('dash');
+  let score = 0, best = TapTime.getBest('pulse'), combo = 0;
   if (best > 0){
     bestLineVal.textContent = best;
     bestLine.classList.remove('hidden');
   }
-  let player, obstacles = [], particles = [], stars;
-  let speed = 4.0;
-  let gravity = 0.85;
-  let jumpV = -15.5;
-  let dist = 0;
+  let radius = 0;
+  let ringSpeed = 2.3;
+  let targetRadius = 0;
+  let tolerance = 16;
   let shake = 0;
+  let particles = [];
+  let flashRing = null; // {r, color, alpha}
   let restartCooldown = 0;
-  let nextSpawnDist = 0;
 
-  const PLAYER_SIZE = 34;
-  const JUMP_AIRTIME = 2*Math.abs(jumpV)/gravity; // frames spent airborne on a full jump
+  function maxDim(){ return Math.min(W,H); }
+
+  function newTarget(){
+    const m = maxDim();
+    targetRadius = m*(0.28 + Math.random()*0.16);
+  }
 
   function resetGame(){
-    score = 0; dist = 0; speed = 4.0; shake = 0;
-    player = { x: W*0.2, y: groundY-PLAYER_SIZE, vy:0, onGround:true, tilt:0 };
-    obstacles = [];
+    score = 0; combo = 0; shake = 0;
+    ringSpeed = 2.3; tolerance = 16;
+    radius = 0;
     particles = [];
-    nextSpawnDist = 0;
-    scheduleNext();
+    flashRing = null;
+    newTarget();
     updateScoreUI();
-    if (!stars){
-      stars = [];
-      for(let i=0;i<60;i++){
-        stars.push({x:Math.random()*W, y:Math.random()*H*0.6, r:Math.random()*1.6+0.4, tw:Math.random()*Math.PI*2});
-      }
-    }
   }
 
   function updateScoreUI(){ scoreEl.textContent = score; }
 
-  function scheduleNext(){
-    // guarantee enough room to land before the next obstacle arrives,
-    // no matter how fast the ground is currently scrolling
-    const safeGap = speed*JUMP_AIRTIME*1.08 + 46;
-    nextSpawnDist = dist + safeGap + Math.random()*(70 + speed*4);
-  }
-
-  function spawnObstacle(){
-    const difficultyT = Math.min(score/25, 1);
-    const isTall = Math.random() < 0.4;
-    const h = isTall ? (44 + difficultyT*22 + Math.random()*16) : (24 + difficultyT*12 + Math.random()*10);
-    const w = 20 + Math.random()*12;
-    const color = OBSTACLE_COLORS[obstacles.length % OBSTACLE_COLORS.length];
-    obstacles.push({ x: W+40, y: groundY-h, w, h, color, passed:false });
-  }
-
-  function jump(){
-    if (player.onGround){
-      player.vy = jumpV;
-      player.onGround = false;
-      spawnDust(player.x+PLAYER_SIZE/2, groundY, 8);
-      if (window.TapTime){ TapTime.sfx.tap(); TapTime.haptics.tap(); }
+  let comboHideTimer = null;
+  function showCombo(){
+    if (combo >= 2){
+      comboEl.textContent = combo >= 5 ? `PERFECT STREAK ×${combo}` : 'PERFECT!';
+      comboEl.classList.add('show');
+      clearTimeout(comboHideTimer);
+      comboHideTimer = setTimeout(()=>comboEl.classList.remove('show'), 650);
     }
   }
 
-  function spawnDust(x,y,n){
-    for(let i=0;i<n;i++){
-      particles.push({
-        x, y,
-        vx:(Math.random()-0.5)*2.5,
-        vy:-Math.random()*2-0.5,
-        life:1,
-        color:'rgba(253,246,236,0.7)'
-      });
+  function spawnBurst(r,color){
+    for(let i=0;i<16;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 1.5+Math.random()*3;
+      const x = CX + Math.cos(a)*r, y = CY + Math.sin(a)*r;
+      particles.push({x,y,vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, color});
+    }
+  }
+
+  function attemptTap(){
+    const diff = Math.abs(radius - targetRadius);
+    const color = colorForScore(score);
+    if (diff <= tolerance){
+      score++;
+      combo++;
+      updateScoreUI();
+      spawnBurst(radius, color);
+      flashRing = {r:targetRadius, color, alpha:1};
+      showCombo();
+      shake = Math.min(shake+2.5, 9);
+      ringSpeed = Math.min(ringSpeed + 0.14, 7.5);
+      tolerance = Math.max(tolerance - 0.55, 6);
+      radius = 0;
+      newTarget();
+      if (window.TapTime){ TapTime.sfx.success(); TapTime.haptics.success(); }
+    } else {
+      fail();
     }
   }
 
   function fail(){
     state = 'over';
     if (window.TapTime){ TapTime.sfx.fail(); TapTime.haptics.fail(); }
-    const result = TapTime.setBestIfHigher('dash', score);
+    const result = TapTime.setBestIfHigher('pulse', score);
     best = result.value;
     newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
-    overTitle.textContent = score >= 40 ? 'Full sprint' : 'Wiped out';
+    overTitle.textContent = score >= 15 ? 'Locked in' : 'Off beat';
     overScreen.classList.remove('hidden');
     hint.style.opacity = 0;
     restartCooldown = 24;
@@ -318,7 +350,7 @@
 
   function onTap(){
     if (state === 'ready'){ startGame(); return; }
-    if (state === 'playing'){ jump(); return; }
+    if (state === 'playing'){ attemptTap(); return; }
     if (state === 'over'){
       if (restartCooldown > 0) return;
       startGame();
@@ -342,7 +374,7 @@
   shareBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if (!window.TapTime) return;
-    const method = TapTime.share('Dash', score);
+    const method = TapTime.share('Pulse', score);
     if (method === 'clipboard') showToast('Copied to clipboard!');
     else if (method === 'none') showToast("Couldn't share on this browser");
   });
@@ -351,48 +383,21 @@
     if (restartCooldown>0) restartCooldown--;
 
     if (state === 'playing'){
-      dist += speed;
-      speed = Math.min(4.0 + Math.max(dist-420, 0)*0.0011, 10.5);
-
-      player.vy += gravity;
-      player.y += player.vy;
-      if (player.y >= groundY-PLAYER_SIZE){
-        if (!player.onGround) spawnDust(player.x+PLAYER_SIZE/2, groundY, 6);
-        player.y = groundY-PLAYER_SIZE;
-        player.vy = 0;
-        player.onGround = true;
-      }
-      player.tilt = Math.max(-0.5, Math.min(0.5, player.vy*0.03));
-
-      if (dist >= nextSpawnDist){
-        spawnObstacle();
-        scheduleNext();
-      }
-
-      for (let i=obstacles.length-1;i>=0;i--){
-        const o = obstacles[i];
-        o.x -= speed;
-        if (!o.passed && o.x+o.w < player.x){
-          o.passed = true;
-          score++;
-          updateScoreUI();
-        }
-        if (o.x < -60) obstacles.splice(i,1);
-
-        // collision (slightly inset for fairness)
-        const px = player.x+9, py = player.y+9, pw = PLAYER_SIZE-18, ph = PLAYER_SIZE-18;
-        if (px < o.x+o.w && px+pw > o.x && py < o.y+o.h && py+ph > o.y){
-          fail();
-        }
+      radius += ringSpeed;
+      if (radius > targetRadius + tolerance*3 + 40){
+        fail();
       }
     }
-
     for (let i=particles.length-1;i>=0;i--){
       const p = particles[i];
+      p.vx *= 0.97; p.vy *= 0.97;
       p.x += p.vx; p.y += p.vy;
-      p.vy += 0.1;
-      p.life -= 0.04;
+      p.life -= 0.03;
       if (p.life<=0) particles.splice(i,1);
+    }
+    if (flashRing){
+      flashRing.alpha -= 0.05;
+      if (flashRing.alpha<=0) flashRing = null;
     }
     if (shake>0) shake *= 0.85;
     if (shake<0.05) shake = 0;
@@ -400,75 +405,65 @@
 
   function draw(){
     ctx.clearRect(0,0,W,H);
+
     ctx.save();
     if (shake>0){
       ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
     }
 
-    // stars
-    if (stars){
-      for (const s of stars){
-        s.tw += 0.03;
-        ctx.globalAlpha = 0.3 + Math.sin(s.tw)*0.25;
-        ctx.fillStyle = '#FDF6EC';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
-        ctx.fill();
-      }
+    // target ring
+    ctx.beginPath();
+    ctx.arc(CX,CY,targetRadius,0,Math.PI*2);
+    ctx.lineWidth = tolerance*2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(CX,CY,targetRadius,0,Math.PI*2);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.stroke();
+
+    // flash on hit
+    if (flashRing){
+      ctx.beginPath();
+      ctx.arc(CX,CY,flashRing.r,0,Math.PI*2);
+      ctx.lineWidth = 5;
+      ctx.globalAlpha = Math.max(flashRing.alpha,0);
+      ctx.strokeStyle = flashRing.color;
+      ctx.stroke();
       ctx.globalAlpha = 1;
     }
 
-    // ground
-    ctx.strokeStyle = 'rgba(253,246,236,0.25)';
-    ctx.lineWidth = 2;
+    // growing ring
+    if (state === 'playing'){
+      ctx.beginPath();
+      ctx.arc(CX,CY,radius,0,Math.PI*2);
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = colorForScore(score);
+      ctx.shadowColor = colorForScore(score);
+      ctx.shadowBlur = 14;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // center dot
     ctx.beginPath();
-    ctx.moveTo(0, groundY+PLAYER_SIZE);
-    ctx.lineTo(W, groundY+PLAYER_SIZE);
-    ctx.stroke();
+    ctx.arc(CX,CY,4,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fill();
 
-    // obstacles
-    for (const o of obstacles){
-      ctx.fillStyle = o.color;
-      roundRect(o.x, o.y, o.w, o.h, 6);
-      ctx.fill();
-    }
-
-    // player
-    if (player){
-      ctx.save();
-      ctx.translate(player.x+PLAYER_SIZE/2, player.y+PLAYER_SIZE/2);
-      ctx.rotate(player.tilt);
-      ctx.fillStyle = '#FF6B5B';
-      roundRect(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE, 9);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      roundRect(-PLAYER_SIZE/2, -PLAYER_SIZE/2, PLAYER_SIZE, PLAYER_SIZE*0.4, 9);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // dust particles
+    // particles
     for (const p of particles){
       ctx.globalAlpha = Math.max(p.life,0);
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x,p.y,2.5,0,Math.PI*2);
+      ctx.arc(p.x,p.y,3,0,Math.PI*2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
 
     ctx.restore();
-  }
-
-  function roundRect(x,y,w,h,r){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr,y);
-    ctx.arcTo(x+w,y,x+w,y+h,rr);
-    ctx.arcTo(x+w,y+h,x,y+h,rr);
-    ctx.arcTo(x,y+h,x,y,rr);
-    ctx.arcTo(x,y,x+w,y,rr);
-    ctx.closePath();
   }
 
   function loop(){

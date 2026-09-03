@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Skyline — It's Tap Time">
+<meta property="og:description" content="Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.">
+<meta property="og:image" content="https://itstaptime.com/assets/og-skyline.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Skyline — It's Tap Time">
+<meta name="twitter:description" content="Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.">
+<meta name="twitter:image" content="https://itstaptime.com/assets/og-skyline.png">
+<title>Skyline — Stack it up</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FDF6EC;
+    --ink:#151225;
+    --panel: rgba(21,18,37,0.55);
+    --panel-strong: rgba(21,18,37,0.82);
+    --accent:#FF6B5B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background:#1B1035;
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
+  #wrap{ position:fixed; inset:0; }
+  .home-link{
+    position:absolute;
+    top: max(20px, env(safe-area-inset-top));
+    left: 18px;
+    z-index: 20;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color: var(--cream, #FDF6EC);
+    text-decoration:none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    background: rgba(255,255,255,0.08);
+    padding: 9px 16px 9px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .home-link:active{ background: rgba(255,255,255,0.18); }
+  canvas{ position:absolute; inset:0; display:block; }
+
+  #hud{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:center;
+    padding-top: max(22px, env(safe-area-inset-top));
+    pointer-events:none;
+  }
+  #score{
+    color:var(--cream);
+    font-weight:700;
+    font-size: clamp(38px, 10vw, 58px);
+    line-height:1;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.35);
+    letter-spacing: -0.01em;
+  }
+  #combo{
+    position:absolute;
+    top: calc(max(22px, env(safe-area-inset-top)) + 62px);
+    left:0; right:0;
+    text-align:center;
+    color:#FFD37A;
+    font-weight:600;
+    font-size:16px;
+    opacity:0;
+    transition: opacity .15s ease;
+    pointer-events:none;
+  }
+  #combo.show{ opacity:1; }
+
+  .overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding: 24px;
+    transition: opacity .25s ease;
+  }
+  .card{
+    background: var(--panel-strong);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 34px 30px 28px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  .card h1{
+    color:var(--cream);
+    font-size: 30px;
+    margin: 0 0 6px;
+    font-weight: 700;
+  }
+  .card p{
+    color: rgba(253,246,236,0.72);
+    font-size: 15px;
+    line-height:1.5;
+    margin: 0 0 22px;
+    font-weight: 500;
+  }
+  .stat-row{
+    display:flex; justify-content:center; gap: 34px;
+    margin-bottom: 24px;
+  }
+  .stat{ text-align:center; }
+  .stat .num{
+    color:var(--cream); font-size: 34px; font-weight:700; line-height:1;
+  }
+  .stat .lbl{
+    color: rgba(253,246,236,0.55); font-size:12px; font-weight:600;
+    margin-top: 6px;
+  }
+  .btn{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight:700;
+    font-size:17px;
+    border:none;
+    border-radius: 14px;
+    padding: 14px 30px;
+    cursor:pointer;
+    box-shadow: 0 8px 24px rgba(255,107,91,0.35);
+  }
+  .btn:active{ transform: translateY(1px); }
+
+  #hint{
+    position:absolute; bottom:0; left:0; right:0;
+    text-align:center;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+    color: rgba(253,246,236,0.5);
+    font-size: 13px;
+    font-weight:600;
+    pointer-events:none;
+  }
+  .best-line{
+    margin: -10px 0 20px;
+    font-size: 13px;
+    font-weight:600;
+    color: rgba(253,246,236,0.5);
+  }
+  .btn-row{ display:flex; gap:10px; justify-content:center; }
+  .btn.secondary{
+    background: rgba(255,255,255,0.1);
+    color: var(--cream);
+    box-shadow:none;
+  }
+  .new-best{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin: -8px 0 18px;
+  }
+  #toast{
+    position:absolute;
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+    left:50%; transform:translateX(-50%);
+    background: rgba(21,18,37,0.94);
+    color:var(--cream);
+    padding:10px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transition:opacity .2s ease;
+    pointer-events:none;
+    z-index: 30;
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <a class="home-link" href="/" id="homeLink">&larr; Home</a>
+
+  <div id="hud"><div id="score">0</div></div>
+  <div id="combo">PERFECT STREAK</div>
+  <div id="hint">Tap anywhere · or press Space</div>
+
+  <div class="overlay" id="startScreen">
+    <div class="card">
+      <h1>Skyline</h1>
+      <p>Tap the moment the block lines up. Stack straight, build tall, don't miss the edge.</p>
+      <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
+      <button class="btn" id="startBtn">Start</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overScreen">
+    <div class="card">
+      <h1 id="overTitle">Toppled</h1>
+      <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Height</div></div>
+        <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
+      </div>
+      <div class="btn-row"><button class="btn" id="retryBtn">Try again</button><button class="btn secondary" id="shareBtn">Share score</button></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<script src="/assets/tap-time.js"></script>
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const comboEl = document.getElementById('combo');
+  const startScreen = document.getElementById('startScreen');
+  const overScreen = document.getElementById('overScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const bestScoreEl = document.getElementById('bestScore');
+  const overTitle = document.getElementById('overTitle');
+  const hint = document.getElementById('hint');
+  const shareBtn = document.getElementById('shareBtn');
+  const toastEl = document.getElementById('toast');
+  const bestLine = document.getElementById('bestLine');
+  const bestLineVal = document.getElementById('bestLineVal');
+  const newBestTag = document.getElementById('newBestTag');
+
+  let W, H, DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---- palette ----
+  const BLOCK_COLORS = ['#FF6B5B','#FFB84D','#4EE2A0','#4DC9FF','#8B6BFF','#FF5B9F','#FFD866'];
+  const SKY_TOP = [27,16,53];      // deep violet night
+  const SKY_BOTTOM_START = [255,139,107]; // warm coral horizon
+  const SKY_BOTTOM_END = [10,8,26];       // fades to near-black night as you climb
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function lerpColor(c1,c2,t){
+    return [ lerp(c1[0],c2[0],t), lerp(c1[1],c2[1],t), lerp(c1[2],c2[2],t) ];
+  }
+  function rgbStr(c){ return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`; }
+
+  const BLOCK_HEIGHT = 42;
+  const MIN_WIDTH = 6;
+  const PERFECT_TOL = 6;
+  const GROUND_FRAC = 0.78;
+  const COMFORT_FRAC = 0.38;
+
+  let state = 'ready'; // ready | playing | over
+  let stack = [];
+  let moving = null;
+  let falling = []; // pieces sliced off, animating fall
+  let particles = [];
+  let score = 0;
+  let best = TapTime.getBest('skyline');
+  if (best > 0){
+    bestLineVal.textContent = best;
+    bestLine.classList.remove('hidden');
+  }
+  let combo = 0;
+  let shake = 0;
+  let baseSpeed = 3.0;
+  let speed = baseSpeed;
+  let restartCooldown = 0;
+
+  function colorForLevel(level){
+    return BLOCK_COLORS[level % BLOCK_COLORS.length];
+  }
+
+  function resetGame(){
+    stack = [];
+    falling = [];
+    particles = [];
+    score = 0;
+    combo = 0;
+    shake = 0;
+    speed = baseSpeed;
+    const baseW = Math.min(W*0.62, 340);
+    stack.push({ x: (W-baseW)/2, width: baseW, level: 0 });
+    spawnMoving();
+    updateScoreUI();
+  }
+
+  function spawnMoving(){
+    const top = stack[stack.length-1];
+    const level = top.level + 1;
+    const width = top.width;
+    const dir = 1;
+    moving = {
+      x: 0,
+      width,
+      level,
+      dir,
+      startedRight: false
+    };
+    // alternate travel start side for visual variety
+    if (level % 2 === 0){
+      moving.x = 0; moving.dir = 1;
+    } else {
+      moving.x = W - width; moving.dir = -1;
+    }
+  }
+
+  function cameraShiftFor(topIndex){
+    const groundY = H*GROUND_FRAC;
+    const comfortY = H*COMFORT_FRAC;
+    const naturalTopY = groundY - (topIndex+1)*BLOCK_HEIGHT;
+    return Math.max(0, comfortY - naturalTopY);
+  }
+
+  function levelScreenY(level, camShift){
+    const groundY = H*GROUND_FRAC;
+    return groundY - (level+1)*BLOCK_HEIGHT + camShift;
+  }
+
+  function updateScoreUI(){
+    scoreEl.textContent = score;
+  }
+
+  function place(){
+    const top = stack[stack.length-1];
+    const m = moving;
+    const left = Math.max(top.x, m.x);
+    const right = Math.min(top.x+top.width, m.x+m.width);
+    const overlap = right-left;
+
+    const camShift = cameraShiftFor(stack.length-1);
+    const y = levelScreenY(m.level, camShift);
+
+    if (overlap < MIN_WIDTH){
+      // total miss -> whole block falls
+      falling.push({x:m.x, width:m.width, y, vy:0, vx: (m.dir)*2, rot:0, vr:(Math.random()-0.5)*0.2, color: colorForLevel(m.level), alpha:1});
+      if (window.TapTime){ TapTime.sfx.fail(); TapTime.haptics.fail(); }
+      gameOver();
+      return;
+    }
+
+    const centerDiff = Math.abs((top.x+top.width/2) - (m.x+m.width/2));
+    const isPerfect = centerDiff < PERFECT_TOL && (top.width-overlap) < PERFECT_TOL*2;
+
+    let newX, newWidth;
+    if (isPerfect){
+      newX = top.x; newWidth = top.width;
+      combo++;
+      spawnBurst(newX+newWidth/2, y, colorForLevel(m.level));
+      shake = Math.min(shake+3, 10);
+      showCombo();
+      if (window.TapTime){ TapTime.sfx.success(); TapTime.haptics.success(); }
+    } else {
+      newX = left; newWidth = overlap;
+      combo = 0;
+      // sliver(s) fall off
+      if (m.x < left){
+        const w = left-m.x;
+        falling.push({x:m.x, width:w, y, vy:0, vx:-1.5, rot:0, vr:-0.12, color: colorForLevel(m.level), alpha:1});
+      }
+      if (m.x+m.width > right){
+        const w = (m.x+m.width)-right;
+        falling.push({x:right, width:w, y, vy:0, vx:1.5, rot:0, vr:0.12, color: colorForLevel(m.level), alpha:1});
+      }
+      if (window.TapTime){ TapTime.sfx.tap(); TapTime.haptics.tap(); }
+    }
+
+    stack.push({x:newX, width:newWidth, level:m.level});
+    score++;
+    updateScoreUI();
+    speed = Math.min(baseSpeed + score*0.22, 13);
+    spawnMoving();
+  }
+
+  let comboHideTimer = null;
+  function showCombo(){
+    if (combo >= 2){
+      comboEl.textContent = combo >= 5 ? `PERFECT STREAK ×${combo}` : 'PERFECT!';
+      comboEl.classList.add('show');
+      clearTimeout(comboHideTimer);
+      comboHideTimer = setTimeout(()=>comboEl.classList.remove('show'), 650);
+    }
+  }
+
+  function spawnBurst(x,y,color){
+    for(let i=0;i<14;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 1.5+Math.random()*3;
+      particles.push({x,y,vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 1.5, life:1, color});
+    }
+  }
+
+  function gameOver(){
+    state = 'over';
+    const result = TapTime.setBestIfHigher('skyline', score);
+    best = result.value;
+    finalScoreEl.textContent = score;
+    bestScoreEl.textContent = best;
+    overTitle.textContent = score === 0 ? 'Toppled' : (score >= 15 ? 'Sky high!' : 'Toppled');
+    newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    overScreen.classList.remove('hidden');
+    hint.style.opacity = 0;
+    restartCooldown = 24;
+    shake = 14;
+  }
+
+  function startGame(){
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    hint.style.opacity = 1;
+    state = 'playing';
+    if (window.TapTime) TapTime.recordPlay();
+    resetGame();
+  }
+
+  // ---- input ----
+  function onTap(){
+    if (state === 'ready'){ startGame(); return; }
+    if (state === 'playing'){ place(); return; }
+    if (state === 'over'){
+      if (restartCooldown > 0) return;
+      startGame();
+      return;
+    }
+  }
+  window.addEventListener('pointerdown', onTap);
+  window.addEventListener('keydown', (e)=>{
+    if (e.code === 'Space'){ e.preventDefault(); onTap(); }
+  });
+  document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
+  document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
+  document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(restartCooldown<=0) startGame(); });
+  let toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+  }
+  shareBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (!window.TapTime) return;
+    const method = TapTime.share('Skyline', score);
+    if (method === 'clipboard') showToast('Copied to clipboard!');
+    else if (method === 'none') showToast("Couldn't share on this browser");
+  });
+
+  // ---- loop ----
+  function update(){
+    if (restartCooldown>0) restartCooldown--;
+
+    if (state === 'playing' && moving){
+      moving.x += moving.dir*speed;
+      if (moving.x <= 0){ moving.x = 0; moving.dir = 1; }
+      if (moving.x + moving.width >= W){ moving.x = W-moving.width; moving.dir = -1; }
+    }
+
+    for (let i=falling.length-1;i>=0;i--){
+      const f = falling[i];
+      f.vy += 0.6;
+      f.y += f.vy;
+      f.x += f.vx;
+      f.rot += f.vr;
+      f.alpha -= 0.012;
+      if (f.y > H+80 || f.alpha<=0) falling.splice(i,1);
+    }
+    for (let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.vy += 0.12;
+      p.x += p.vx; p.y += p.vy;
+      p.life -= 0.03;
+      if (p.life<=0) particles.splice(i,1);
+    }
+    if (shake>0) shake *= 0.85;
+    if (shake<0.05) shake = 0;
+  }
+
+  function draw(){
+    const climbT = Math.min(score/40, 1);
+    const topC = SKY_TOP;
+    const botC = lerpColor(SKY_BOTTOM_START, SKY_BOTTOM_END, climbT);
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, rgbStr(topC));
+    g.addColorStop(1, rgbStr(botC));
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    ctx.save();
+    if (shake>0){
+      const dx = (Math.random()-0.5)*shake;
+      const dy = (Math.random()-0.5)*shake;
+      ctx.translate(dx,dy);
+    }
+
+    const camShift = stack.length ? cameraShiftFor(stack.length-1) : 0;
+
+    // stack blocks
+    for (const b of stack){
+      const y = levelScreenY(b.level, camShift);
+      drawBlock(b.x, y, b.width, colorForLevel(b.level));
+    }
+    // moving block
+    if (state==='playing' && moving){
+      const y = levelScreenY(moving.level, camShift);
+      drawBlock(moving.x, y, moving.width, colorForLevel(moving.level));
+    }
+    // falling pieces
+    for (const f of falling){
+      ctx.save();
+      ctx.globalAlpha = Math.max(f.alpha,0);
+      ctx.translate(f.x+f.width/2, f.y+BLOCK_HEIGHT/2);
+      ctx.rotate(f.rot);
+      ctx.fillStyle = f.color;
+      roundRect(-f.width/2, -BLOCK_HEIGHT/2, f.width, BLOCK_HEIGHT, 6);
+      ctx.fill();
+      ctx.restore();
+    }
+    // particles
+    for (const p of particles){
+      ctx.globalAlpha = Math.max(p.life,0);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,3,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function roundRect(x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y);
+    ctx.arcTo(x+w,y,x+w,y+h,rr);
+    ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr);
+    ctx.arcTo(x,y,x+w,y,rr);
+    ctx.closePath();
+  }
+
+  function drawBlock(x,y,w,color){
+    ctx.fillStyle = color;
+    roundRect(x,y,w,BLOCK_HEIGHT,7);
+    ctx.fill();
+    // top highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    roundRect(x,y,w,BLOCK_HEIGHT*0.34,7);
+    ctx.fill();
+    // bottom shade
+    ctx.fillStyle = 'rgba(0,0,0,0.14)';
+    ctx.fillRect(x, y+BLOCK_HEIGHT*0.78, w, BLOCK_HEIGHT*0.22);
+  }
+
+  function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>
