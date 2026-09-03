@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Pulse — It's Tap Time</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pulse — It's Tap Time">
+<meta property="og:description" content="A ring grows from the center — tap the instant it lines up with the target.">
+<meta property="og:image" content="https://itstaptime.com/assets/og-pulse.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pulse — It's Tap Time">
+<meta name="twitter:description" content="A ring grows from the center — tap the instant it lines up with the target.">
+<meta name="twitter:image" content="https://itstaptime.com/assets/og-pulse.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -134,6 +142,45 @@
     font-weight:600;
     pointer-events:none;
   }
+  .best-line{
+    margin: -10px 0 20px;
+    font-size: 13px;
+    font-weight:600;
+    color: rgba(253,246,236,0.5);
+  }
+  .new-best{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin: -8px 0 18px;
+  }
+  .btn-row{ display:flex; gap:10px; justify-content:center; }
+  .btn.secondary{
+    background: rgba(255,255,255,0.1);
+    color: var(--cream);
+    box-shadow:none;
+  }
+  #toast{
+    position:absolute;
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+    left:50%; transform:translateX(-50%);
+    background: rgba(21,18,37,0.94);
+    color:var(--cream);
+    padding:10px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transition:opacity .2s ease;
+    pointer-events:none;
+    z-index: 30;
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
   .hidden{ display:none !important; }
 </style>
 </head>
@@ -150,6 +197,7 @@
     <div class="card">
       <h1>Pulse</h1>
       <p>A ring grows from the center. Tap the instant it lines up with the target ring.</p>
+      <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
     </div>
   </div>
@@ -157,15 +205,18 @@
   <div class="overlay hidden" id="overScreen">
     <div class="card">
       <h1 id="overTitle">Off beat</h1>
+      <div class="new-best hidden" id="newBestTag">New best!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Hits</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
       </div>
-      <button class="btn" id="retryBtn">Try again</button>
+      <div class="btn-row"><button class="btn" id="retryBtn">Try again</button><button class="btn secondary" id="shareBtn">Share score</button></div>
     </div>
   </div>
+  <div id="toast"></div>
 </div>
 
+<script src="/assets/tap-time.js"></script>
 <script>
 (function(){
   const canvas = document.getElementById('game');
@@ -177,6 +228,11 @@
   const finalScoreEl = document.getElementById('finalScore');
   const bestScoreEl = document.getElementById('bestScore');
   const overTitle = document.getElementById('overTitle');
+  const bestLine = document.getElementById('bestLine');
+  const bestLineVal = document.getElementById('bestLineVal');
+  const newBestTag = document.getElementById('newBestTag');
+  const shareBtn = document.getElementById('shareBtn');
+  const toastEl = document.getElementById('toast');
   const hint = document.getElementById('hint');
 
   let W, H, DPR, CX, CY;
@@ -195,7 +251,11 @@
   function colorForScore(s){ return RING_COLORS[s % RING_COLORS.length]; }
 
   let state = 'ready';
-  let score = 0, best = 0, combo = 0;
+  let score = 0, best = TapTime.getBest('pulse'), combo = 0;
+  if (best > 0){
+    bestLineVal.textContent = best;
+    bestLine.classList.remove('hidden');
+  }
   let radius = 0;
   let ringSpeed = 2.3;
   let targetRadius = 0;
@@ -258,6 +318,7 @@
       tolerance = Math.max(tolerance - 0.55, 6);
       radius = 0;
       newTarget();
+      if (window.TapTime){ TapTime.sfx.success(); TapTime.haptics.success(); }
     } else {
       fail();
     }
@@ -265,7 +326,10 @@
 
   function fail(){
     state = 'over';
-    best = Math.max(best, score);
+    if (window.TapTime){ TapTime.sfx.fail(); TapTime.haptics.fail(); }
+    const result = TapTime.setBestIfHigher('pulse', score);
+    best = result.value;
+    newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
     overTitle.textContent = score >= 15 ? 'Locked in' : 'Off beat';
@@ -280,6 +344,7 @@
     overScreen.classList.add('hidden');
     hint.style.opacity = 1;
     state = 'playing';
+    if (window.TapTime) TapTime.recordPlay();
     resetGame();
   }
 
@@ -299,6 +364,20 @@
   document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
   document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
   document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(restartCooldown<=0) startGame(); });
+  let toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+  }
+  shareBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (!window.TapTime) return;
+    const method = TapTime.share('Pulse', score);
+    if (method === 'clipboard') showToast('Copied to clipboard!');
+    else if (method === 'none') showToast("Couldn't share on this browser");
+  });
 
   function update(){
     if (restartCooldown>0) restartCooldown--;
