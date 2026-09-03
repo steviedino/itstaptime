@@ -31,6 +31,7 @@
   }
   #wrap{ position:fixed; inset:0; }
   .home-link{
+    touch-action: manipulation;
     position:absolute;
     top: max(20px, env(safe-area-inset-top));
     left: 18px;
@@ -64,6 +65,7 @@
     border-radius: 24px;
     filter: brightness(0.5) saturate(0.85);
     transition: filter .08s ease, transform .08s ease;
+    touch-action: manipulation;
   }
   .quad.lit{
     filter: brightness(1.25) saturate(1.05);
@@ -135,6 +137,7 @@
   .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
   .btn{
     display:inline-block;
+    touch-action: manipulation;
     background: var(--accent);
     color: var(--ink);
     font-family: inherit;
@@ -334,6 +337,7 @@
 
   quads.forEach(q=>{
     q.addEventListener('pointerdown', (e)=>{
+      e.preventDefault();
       e.stopPropagation();
       onQuadTap(parseInt(q.dataset.i,10));
     });
