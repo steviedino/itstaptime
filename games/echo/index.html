@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Echo — It's Tap Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FDF6EC;
+    --ink:#151225;
+    --accent:#FF6B5B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background:#0A081A;
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
+  #wrap{ position:fixed; inset:0; }
+  .home-link{
+    position:absolute;
+    top: max(20px, env(safe-area-inset-top));
+    left: 18px;
+    z-index: 20;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color: var(--cream);
+    text-decoration:none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    background: rgba(0,0,0,0.35);
+    padding: 9px 16px 9px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .home-link:active{ background: rgba(0,0,0,0.5); }
+
+  #board{
+    position:absolute; inset:0;
+    padding: 16px;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
+  }
+  .quad{
+    background: var(--c);
+    border-radius: 24px;
+    filter: brightness(0.5) saturate(0.85);
+    transition: filter .08s ease, transform .08s ease;
+  }
+  .quad.lit{
+    filter: brightness(1.25) saturate(1.05);
+  }
+  .quad.tapped{
+    transform: scale(0.96);
+  }
+  #board.shake{ animation: shakeBoard .32s ease; }
+  @keyframes shakeBoard{
+    0%,100%{ transform:translate(0,0); }
+    20%{ transform:translate(-8px,0); }
+    40%{ transform:translate(7px,0); }
+    60%{ transform:translate(-5px,0); }
+    80%{ transform:translate(4px,0); }
+  }
+
+  #hud{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:center;
+    padding-top: max(22px, env(safe-area-inset-top));
+    pointer-events:none;
+    z-index: 5;
+  }
+  #score{
+    color:var(--cream);
+    font-weight:700;
+    font-size: clamp(38px, 10vw, 58px);
+    line-height:1;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.5);
+    letter-spacing: -0.01em;
+  }
+
+  #hint{
+    position:absolute; bottom:0; left:0; right:0;
+    text-align:center;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+    color: rgba(253,246,236,0.6);
+    font-size: 13px;
+    font-weight:600;
+    pointer-events:none;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+    z-index: 5;
+  }
+
+  .overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding: 24px;
+    z-index: 10;
+  }
+  .card{
+    background: rgba(21,18,37,0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 34px 30px 28px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  }
+  .card h1{ color:var(--cream); font-size: 30px; margin: 0 0 6px; font-weight: 700; }
+  .card p{ color: rgba(253,246,236,0.72); font-size: 15px; line-height:1.5; margin: 0 0 22px; font-weight: 500; }
+  .stat-row{ display:flex; justify-content:center; gap: 34px; margin-bottom: 24px; }
+  .stat{ text-align:center; }
+  .stat .num{ color:var(--cream); font-size: 34px; font-weight:700; line-height:1; }
+  .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
+  .btn{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight:700;
+    font-size:17px;
+    border:none;
+    border-radius: 14px;
+    padding: 14px 30px;
+    cursor:pointer;
+    box-shadow: 0 8px 24px rgba(255,107,91,0.35);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="board">
+    <div class="quad" data-i="0" style="--c:#FF6B5B"></div>
+    <div class="quad" data-i="1" style="--c:#4EE2A0"></div>
+    <div class="quad" data-i="2" style="--c:#4DC9FF"></div>
+    <div class="quad" data-i="3" style="--c:#8B6BFF"></div>
+  </div>
+
+  <a class="home-link" href="/" id="homeLink">&larr; Home</a>
+  <div id="hud"><div id="score">0</div></div>
+  <div id="hint">Watch the pattern, then repeat it</div>
+
+  <div class="overlay" id="startScreen">
+    <div class="card">
+      <h1>Echo</h1>
+      <p>Watch the colors flash, then tap them back in the same order. Each round adds one more.</p>
+      <button class="btn" id="startBtn">Start</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overScreen">
+    <div class="card">
+      <h1 id="overTitle">Broke the chain</h1>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Rounds</div></div>
+        <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
+      </div>
+      <button class="btn" id="retryBtn">Try again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const board = document.getElementById('board');
+  const quads = Array.from(document.querySelectorAll('.quad'));
+  const scoreEl = document.getElementById('score');
+  const startScreen = document.getElementById('startScreen');
+  const overScreen = document.getElementById('overScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const bestScoreEl = document.getElementById('bestScore');
+  const overTitle = document.getElementById('overTitle');
+  const hint = document.getElementById('hint');
+
+  let state = 'ready'; // ready | playing | over
+  let phase = 'idle';  // showing | input | idle
+  let sequence = [];
+  let step = 0;
+  let score = 0, best = 0;
+  let restartCooldown = false;
+  let playToken = 0; // invalidates stale timeouts after reset/game over
+
+  function updateScoreUI(){ scoreEl.textContent = score; }
+
+  function addStep(){
+    sequence.push(Math.floor(Math.random()*4));
+  }
+
+  function timingFor(){
+    const n = sequence.length;
+    const show = Math.max(260, 560 - n*14);
+    const gap = Math.max(110, 230 - n*6);
+    return {show, gap};
+  }
+
+  function lit(i, on){
+    quads[i].classList.toggle('lit', on);
+  }
+
+  function playSequence(){
+    phase = 'showing';
+    hint.textContent = 'Watch closely...';
+    const myToken = playToken;
+    const {show, gap} = timingFor();
+    let i = 0;
+    function step_(){
+      if (myToken !== playToken) return;
+      if (i >= sequence.length){
+        phase = 'input';
+        step = 0;
+        hint.textContent = 'Your turn — repeat it back';
+        return;
+      }
+      const idx = sequence[i];
+      lit(idx, true);
+      setTimeout(()=>{
+        if (myToken !== playToken) return;
+        lit(idx, false);
+        setTimeout(step_, gap);
+      }, show);
+      i++;
+    }
+    setTimeout(step_, 500);
+  }
+
+  function resetGame(){
+    playToken++;
+    score = 0; sequence = []; step = 0;
+    quads.forEach(q=>q.classList.remove('lit'));
+    updateScoreUI();
+    addStep();
+    playSequence();
+  }
+
+  function flashTap(i){
+    quads[i].classList.add('tapped');
+    setTimeout(()=>quads[i].classList.remove('tapped'), 100);
+  }
+
+  function onQuadTap(i){
+    if (state !== 'playing' || phase !== 'input') return;
+    flashTap(i);
+    if (sequence[step] === i){
+      step++;
+      if (step >= sequence.length){
+        score++;
+        updateScoreUI();
+        phase = 'idle';
+        hint.textContent = 'Nice — next round...';
+        addStep();
+        setTimeout(playSequence, 550);
+      }
+    } else {
+      fail();
+    }
+  }
+
+  quads.forEach(q=>{
+    q.addEventListener('pointerdown', (e)=>{
+      e.stopPropagation();
+      onQuadTap(parseInt(q.dataset.i,10));
+    });
+  });
+
+  function fail(){
+    state = 'over';
+    best = Math.max(best, score);
+    finalScoreEl.textContent = score;
+    bestScoreEl.textContent = best;
+    overTitle.textContent = score >= 10 ? 'Sharp memory' : 'Broke the chain';
+    overScreen.classList.remove('hidden');
+    hint.textContent = '';
+    restartCooldown = true;
+    setTimeout(()=>{ restartCooldown = false; }, 400);
+    board.classList.add('shake');
+    setTimeout(()=>board.classList.remove('shake'), 340);
+  }
+
+  function startGame(){
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    state = 'playing';
+    resetGame();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
+  document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(!restartCooldown) startGame(); });
+  document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
+})();
+</script>
+</body>
+</html>
