@@ -170,6 +170,17 @@
     background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%);
     pointer-events:none;
   }
+  .featured-icon{
+    position:absolute;
+    top: 36px; right: 36px;
+    width:52px; height:52px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
   .featured:hover{
     transform: translateY(-3px);
     background: linear-gradient(135deg, rgba(255,107,91,0.22), rgba(139,107,255,0.22));
@@ -251,8 +262,16 @@
     <div class="stat-pill fade-in" id="streakPill" style="animation-delay:.17s; display:none;">🔥 <span id="streakCount"></span>-day streak</div>
   </div>
 
-  <!-- TODAY'S GAME — update this block each time you post a new game -->
+  <!-- TODAY'S GAME — update this block each time you post a new game (link, title, description, AND the icon below) -->
   <a class="featured fade-in" style="animation-delay:.2s" href="/games/echo/">
+    <div class="featured-icon">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <rect x="0" y="0" width="11" height="11" rx="3" fill="#FF6B5B"/>
+        <rect x="15" y="0" width="11" height="11" rx="3" fill="#4EE2A0"/>
+        <rect x="0" y="15" width="11" height="11" rx="3" fill="#4DC9FF"/>
+        <rect x="15" y="15" width="11" height="11" rx="3" fill="#8B6BFF"/>
+      </svg>
+    </div>
     <div class="tag"><span class="pulse-dot"></span>Today</div>
     <h2>Echo</h2>
     <p>Watch the colors flash, then tap them back in order. Each round adds one more to remember.</p>
