@@ -88,9 +88,23 @@
     return streak;
   }
 
+  function getChallenge(){
+    try{
+      const params = new URLSearchParams(location.search);
+      const raw = params.get('beat');
+      const n = raw != null ? parseInt(raw, 10) : NaN;
+      return (Number.isFinite(n) && n >= 0) ? n : null;
+    }catch(e){ return null; }
+  }
+
   function share(gameName, score){
-    const url = location.href;
-    const text = `I got ${score} on ${gameName} on It's Tap Time \u2014 beat me:`;
+    let url;
+    try{
+      const u = new URL(location.href);
+      u.searchParams.set('beat', String(score));
+      url = u.toString();
+    }catch(e){ url = location.href; }
+    const text = `I got ${score} on ${gameName} on It's Tap Time \u2014 think you can beat it?`;
     if (navigator.share){
       navigator.share({ title: "It's Tap Time", text, url }).catch(()=>{});
       return 'native';
@@ -101,5 +115,5 @@
     return 'none';
   }
 
-  window.TapTime = { sfx, haptics, getBest, setBestIfHigher, getStreak, recordPlay, share };
+  window.TapTime = { sfx, haptics, getBest, setBestIfHigher, getStreak, recordPlay, share, getChallenge };
 })();
