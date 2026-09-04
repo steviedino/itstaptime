@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Snap — It's Tap Time</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="Snap — It's Tap Time">
+<meta property="og:description" content="A target appears — tap it before it's gone. Miss it, hit the wrong spot, or run out of time, and it's over.">
+<meta property="og:image" content="https://itstaptime.com/assets/og-snap.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Snap — It's Tap Time">
+<meta name="twitter:description" content="A target appears — tap it before it's gone. Miss it, hit the wrong spot, or run out of time, and it's over.">
+<meta name="twitter:image" content="https://itstaptime.com/assets/og-snap.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FDF6EC;
+    --ink:#151225;
+    --accent:#FF6B5B;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html,body{
+    margin:0; padding:0; height:100%; overflow:hidden;
+    background: linear-gradient(180deg, #1B1035 0%, #2A1B4A 55%, #0A081A 100%);
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
+  #wrap{ position:fixed; inset:0; }
+  canvas{ position:absolute; inset:0; display:block; }
+
+  .home-link{
+    touch-action: none;
+    position:absolute;
+    top: max(20px, env(safe-area-inset-top));
+    left: 18px;
+    z-index: 20;
+    display:flex;
+    align-items:center;
+    gap:5px;
+    color: var(--cream);
+    text-decoration:none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    background: rgba(255,255,255,0.08);
+    padding: 9px 16px 9px 12px;
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .home-link:active{ background: rgba(255,255,255,0.18); }
+
+  #hud{
+    position:absolute; top:0; left:0; right:0;
+    display:flex; justify-content:center;
+    padding-top: max(22px, env(safe-area-inset-top));
+    pointer-events:none;
+    z-index: 5;
+  }
+  #score{
+    color:var(--cream);
+    font-weight:700;
+    font-size: clamp(38px, 10vw, 58px);
+    line-height:1;
+    text-shadow: 0 2px 18px rgba(0,0,0,0.35);
+    letter-spacing: -0.01em;
+  }
+
+  #hint{
+    position:absolute; bottom:0; left:0; right:0;
+    text-align:center;
+    padding-bottom: max(26px, env(safe-area-inset-bottom));
+    color: rgba(253,246,236,0.5);
+    font-size: 13px;
+    font-weight:600;
+    pointer-events:none;
+    z-index: 5;
+  }
+
+  .overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    text-align:center;
+    padding: 24px;
+    z-index: 10;
+  }
+  .card{
+    background: rgba(21,18,37,0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 34px 30px 28px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  .card h1{ color:var(--cream); font-size: 30px; margin: 0 0 6px; font-weight: 700; }
+  .card p{ color: rgba(253,246,236,0.72); font-size: 15px; line-height:1.5; margin: 0 0 22px; font-weight: 500; }
+  .best-line{
+    margin: -10px 0 20px;
+    font-size: 13px;
+    font-weight:600;
+    color: rgba(253,246,236,0.5);
+  }
+  .new-best{
+    display:inline-block;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin: -8px 0 18px;
+  }
+  .stat-row{ display:flex; justify-content:center; gap: 34px; margin-bottom: 24px; }
+  .stat{ text-align:center; }
+  .stat .num{ color:var(--cream); font-size: 34px; font-weight:700; line-height:1; }
+  .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
+  .btn-row{ display:flex; gap:10px; justify-content:center; }
+  .btn{
+    display:inline-block;
+    touch-action: none;
+    background: var(--accent);
+    color: var(--ink);
+    font-family: inherit;
+    font-weight:700;
+    font-size:17px;
+    border:none;
+    border-radius: 14px;
+    padding: 14px 30px;
+    cursor:pointer;
+    box-shadow: 0 8px 24px rgba(255,107,91,0.35);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn.secondary{
+    background: rgba(255,255,255,0.1);
+    color: var(--cream);
+    box-shadow:none;
+  }
+  #toast{
+    position:absolute;
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
+    left:50%; transform:translateX(-50%);
+    background: rgba(21,18,37,0.94);
+    color:var(--cream);
+    padding:10px 18px;
+    border-radius:12px;
+    font-size:13px;
+    font-weight:600;
+    opacity:0;
+    transition:opacity .2s ease;
+    pointer-events:none;
+    z-index: 30;
+    white-space:nowrap;
+  }
+  #toast.show{ opacity:1; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+  <a class="home-link" href="/" id="homeLink">&larr; Home</a>
+  <div id="hud"><div id="score">0</div></div>
+  <div id="hint">Tap the target before it's gone</div>
+
+  <div class="overlay" id="startScreen">
+    <div class="card">
+      <h1>Snap</h1>
+      <p>A target pops up somewhere on screen. Tap it before the ring runs out — miss it or hit empty space, and it's over.</p>
+      <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
+      <button class="btn" id="startBtn">Start</button>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="overScreen">
+    <div class="card">
+      <h1 id="overTitle">Too slow</h1>
+      <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="stat-row">
+        <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Hits</div></div>
+        <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
+      </div>
+      <div class="btn-row"><button class="btn" id="retryBtn">Try again</button><button class="btn secondary" id="shareBtn">Share score</button></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<script src="/assets/tap-time.js"></script>
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const startScreen = document.getElementById('startScreen');
+  const overScreen = document.getElementById('overScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const bestScoreEl = document.getElementById('bestScore');
+  const overTitle = document.getElementById('overTitle');
+  const hint = document.getElementById('hint');
+  const bestLine = document.getElementById('bestLine');
+  const bestLineVal = document.getElementById('bestLineVal');
+  const newBestTag = document.getElementById('newBestTag');
+  const shareBtn = document.getElementById('shareBtn');
+  const toastEl = document.getElementById('toast');
+
+  let W, H, DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const COLORS = ['#FF6B5B','#FFB84D','#4EE2A0','#4DC9FF','#8B6BFF','#FF5B9F','#FFD866'];
+
+  let state = 'ready'; // ready | playing | over
+  let score = 0, best = TapTime.getBest('snap');
+  if (best > 0){
+    bestLineVal.textContent = best;
+    bestLine.classList.remove('hidden');
+  }
+  let target = null; // {x,y,r,born,duration,color}
+  let particles = [];
+  let shake = 0;
+  let restartCooldown = 0;
+
+  const TOP_PAD = 110, BOTTOM_PAD = 90, SIDE_PAD = 16;
+
+  function updateScoreUI(){ scoreEl.textContent = score; }
+
+  function paramsForScore(s){
+    const duration = Math.max(900 - s*22, 420);
+    const radius = Math.max(46 - s*0.7, 27);
+    return {duration, radius};
+  }
+
+  function spawnTarget(){
+    const {duration, radius} = paramsForScore(score);
+    const minX = SIDE_PAD + radius, maxX = W - SIDE_PAD - radius;
+    const minY = TOP_PAD + radius, maxY = H - BOTTOM_PAD - radius;
+    const x = minX + Math.random()*Math.max(maxX-minX, 1);
+    const y = minY + Math.random()*Math.max(maxY-minY, 1);
+    target = {
+      x, y, r: radius,
+      born: performance.now(),
+      duration,
+      color: COLORS[score % COLORS.length]
+    };
+  }
+
+  function resetGame(){
+    score = 0; shake = 0;
+    particles = [];
+    updateScoreUI();
+    spawnTarget();
+  }
+
+  function spawnBurst(x,y,color){
+    for(let i=0;i<14;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 1.5+Math.random()*3;
+      particles.push({x,y,vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, color});
+    }
+  }
+
+  function onPointer(clientX, clientY){
+    if (state === 'ready'){ startGame(); return; }
+    if (state !== 'playing' || !target) return;
+    const dx = clientX - target.x, dy = clientY - target.y;
+    const hit = Math.sqrt(dx*dx + dy*dy) <= target.r;
+    if (hit){
+      score++;
+      updateScoreUI();
+      spawnBurst(target.x, target.y, target.color);
+      shake = Math.min(shake + 2.5, 9);
+      if (window.TapTime){ TapTime.sfx.success(); TapTime.haptics.success(); }
+      spawnTarget();
+    } else {
+      fail();
+    }
+  }
+
+  canvas.addEventListener('pointerdown', (e)=>{
+    onPointer(e.clientX, e.clientY);
+  });
+
+  function fail(){
+    state = 'over';
+    if (window.TapTime){ TapTime.sfx.fail(); TapTime.haptics.fail(); }
+    const result = TapTime.setBestIfHigher('snap', score);
+    best = result.value;
+    newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    finalScoreEl.textContent = score;
+    bestScoreEl.textContent = best;
+    overTitle.textContent = score >= 20 ? 'Lightning reflexes' : 'Too slow';
+    overScreen.classList.remove('hidden');
+    hint.style.opacity = 0;
+    target = null;
+    restartCooldown = 24;
+    shake = 14;
+  }
+
+  function startGame(){
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    hint.style.opacity = 1;
+    state = 'playing';
+    if (window.TapTime) TapTime.recordPlay();
+    resetGame();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(); });
+  document.getElementById('retryBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(restartCooldown<=0) startGame(); });
+  document.getElementById('homeLink').addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
+
+  let toastTimer = null;
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1800);
+  }
+  shareBtn.addEventListener('pointerdown', (e)=>{ e.stopPropagation(); });
+  shareBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if (!window.TapTime) return;
+    const method = TapTime.share('Snap', score);
+    if (method === 'clipboard') showToast('Copied to clipboard!');
+    else if (method === 'none') showToast("Couldn't share on this browser");
+  });
+
+  window.addEventListener('keydown', (e)=>{
+    if (e.code === 'Space'){
+      e.preventDefault();
+      if (state === 'ready') startGame();
+      else if (state === 'over' && restartCooldown <= 0) startGame();
+    }
+  });
+
+  function update(){
+    if (restartCooldown > 0) restartCooldown--;
+
+    if (state === 'playing' && target){
+      const elapsed = performance.now() - target.born;
+      if (elapsed >= target.duration){
+        fail();
+      }
+    }
+    for (let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.x += p.vx; p.y += p.vy;
+      p.vy += 0.08;
+      p.life -= 0.03;
+      if (p.life<=0) particles.splice(i,1);
+    }
+    if (shake>0) shake *= 0.85;
+    if (shake<0.05) shake = 0;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    ctx.save();
+    if (shake>0){
+      ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+    }
+
+    if (state === 'playing' && target){
+      const elapsed = performance.now() - target.born;
+      const remaining = Math.max(0, 1 - elapsed/target.duration);
+
+      // countdown ring
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, target.r+9, -Math.PI/2, -Math.PI/2 + remaining*Math.PI*2);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(253,246,236,0.65)';
+      ctx.stroke();
+
+      // target
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, target.r, 0, Math.PI*2);
+      ctx.fillStyle = target.color;
+      ctx.shadowColor = target.color;
+      ctx.shadowBlur = 18;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.beginPath();
+      ctx.arc(target.x, target.y, target.r*0.4, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fill();
+    }
+
+    for (const p of particles){
+      ctx.globalAlpha = Math.max(p.life,0);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,3,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>
