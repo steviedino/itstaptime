@@ -166,6 +166,18 @@
     border-radius: 999px;
     margin: -8px 0 18px;
   }
+  .challenge-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 4px 0 16px;
+  }
   .btn-row{ display:flex; gap:10px; justify-content:center; }
   .btn.secondary{
     background: rgba(255,255,255,0.1);
@@ -208,6 +220,7 @@
   <div class="overlay" id="startScreen">
     <div class="card">
       <h1>Echo</h1>
+      <p class="challenge-tag hidden" id="challengeLine">🎯 Beat <span id="challengeVal">0</span> to win</p>
       <p>Watch the colors flash, then tap them back in the same order. Each round adds one more.</p>
       <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
@@ -218,6 +231,7 @@
     <div class="card">
       <h1 id="overTitle">Broke the chain</h1>
       <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="new-best hidden" id="challengeBeatTag">🏆 You beat the challenge!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Rounds</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
@@ -242,6 +256,9 @@
   const bestLine = document.getElementById('bestLine');
   const bestLineVal = document.getElementById('bestLineVal');
   const newBestTag = document.getElementById('newBestTag');
+  const challengeLine = document.getElementById('challengeLine');
+  const challengeVal = document.getElementById('challengeVal');
+  const challengeBeatTag = document.getElementById('challengeBeatTag');
   const shareBtn = document.getElementById('shareBtn');
   const toastEl = document.getElementById('toast');
   const hint = document.getElementById('hint');
@@ -254,6 +271,11 @@
   if (best > 0){
     bestLineVal.textContent = best;
     bestLine.classList.remove('hidden');
+  }
+  const challengeScore = window.TapTime ? TapTime.getChallenge() : null;
+  if (challengeScore != null){
+    challengeVal.textContent = challengeScore;
+    challengeLine.classList.remove('hidden');
   }
   let restartCooldown = false;
   let playToken = 0; // invalidates stale timeouts after reset/game over
@@ -353,6 +375,7 @@
     const result = TapTime.setBestIfHigher('echo', score);
     best = result.value;
     newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    challengeBeatTag.classList.toggle('hidden', !(challengeScore != null && score > challengeScore));
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
     overTitle.textContent = score >= 10 ? 'Sharp memory' : 'Broke the chain';
