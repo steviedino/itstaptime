@@ -33,6 +33,7 @@
   }
   #wrap{ position:fixed; inset:0; }
   .home-link{
+    touch-action: manipulation;
     position:absolute;
     top: max(20px, env(safe-area-inset-top));
     left: 18px;
@@ -128,6 +129,7 @@
   }
   .btn{
     display:inline-block;
+    touch-action: manipulation;
     background: var(--accent);
     color: var(--ink);
     font-family: inherit;
@@ -172,6 +174,18 @@
     border-radius: 999px;
     margin: -8px 0 18px;
   }
+  .challenge-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 4px 0 16px;
+  }
   #toast{
     position:absolute;
     bottom: max(76px, calc(env(safe-area-inset-bottom) + 64px));
@@ -204,6 +218,7 @@
   <div class="overlay" id="startScreen">
     <div class="card">
       <h1>Skyline</h1>
+      <p class="challenge-tag hidden" id="challengeLine">🎯 Beat <span id="challengeVal">0</span> to win</p>
       <p>Tap the moment the block lines up. Stack straight, build tall, don't miss the edge.</p>
       <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
@@ -214,6 +229,7 @@
     <div class="card">
       <h1 id="overTitle">Toppled</h1>
       <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="new-best hidden" id="challengeBeatTag">🏆 You beat the challenge!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Height</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
@@ -242,6 +258,9 @@
   const bestLine = document.getElementById('bestLine');
   const bestLineVal = document.getElementById('bestLineVal');
   const newBestTag = document.getElementById('newBestTag');
+  const challengeLine = document.getElementById('challengeLine');
+  const challengeVal = document.getElementById('challengeVal');
+  const challengeBeatTag = document.getElementById('challengeBeatTag');
 
   let W, H, DPR;
   function resize(){
@@ -285,6 +304,11 @@
   if (best > 0){
     bestLineVal.textContent = best;
     bestLine.classList.remove('hidden');
+  }
+  const challengeScore = window.TapTime ? TapTime.getChallenge() : null;
+  if (challengeScore != null){
+    challengeVal.textContent = challengeScore;
+    challengeLine.classList.remove('hidden');
   }
   let combo = 0;
   let shake = 0;
@@ -423,6 +447,7 @@
     bestScoreEl.textContent = best;
     overTitle.textContent = score === 0 ? 'Toppled' : (score >= 15 ? 'Sky high!' : 'Toppled');
     newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    challengeBeatTag.classList.toggle('hidden', !(challengeScore != null && score > challengeScore));
     overScreen.classList.remove('hidden');
     hint.style.opacity = 0;
     restartCooldown = 24;
