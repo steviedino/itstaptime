@@ -118,6 +118,18 @@
     border-radius: 999px;
     margin: -8px 0 18px;
   }
+  .challenge-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 4px 0 16px;
+  }
   .stat-row{ display:flex; justify-content:center; gap: 34px; margin-bottom: 24px; }
   .stat{ text-align:center; }
   .stat .num{ color:var(--cream); font-size: 34px; font-weight:700; line-height:1; }
@@ -173,6 +185,7 @@
   <div class="overlay" id="startScreen">
     <div class="card">
       <h1>Snap</h1>
+      <p class="challenge-tag hidden" id="challengeLine">🎯 Beat <span id="challengeVal">0</span> to win</p>
       <p>A target pops up somewhere on screen. Tap it before the ring runs out — miss it or hit empty space, and it's over.</p>
       <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
@@ -183,6 +196,7 @@
     <div class="card">
       <h1 id="overTitle">Too slow</h1>
       <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="new-best hidden" id="challengeBeatTag">🏆 You beat the challenge!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Hits</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
@@ -208,6 +222,9 @@
   const bestLine = document.getElementById('bestLine');
   const bestLineVal = document.getElementById('bestLineVal');
   const newBestTag = document.getElementById('newBestTag');
+  const challengeLine = document.getElementById('challengeLine');
+  const challengeVal = document.getElementById('challengeVal');
+  const challengeBeatTag = document.getElementById('challengeBeatTag');
   const shareBtn = document.getElementById('shareBtn');
   const toastEl = document.getElementById('toast');
 
@@ -229,6 +246,11 @@
   if (best > 0){
     bestLineVal.textContent = best;
     bestLine.classList.remove('hidden');
+  }
+  const challengeScore = window.TapTime ? TapTime.getChallenge() : null;
+  if (challengeScore != null){
+    challengeVal.textContent = challengeScore;
+    challengeLine.classList.remove('hidden');
   }
   let target = null; // {x,y,r,born,duration,color}
   let particles = [];
@@ -301,6 +323,7 @@
     const result = TapTime.setBestIfHigher('snap', score);
     best = result.value;
     newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    challengeBeatTag.classList.toggle('hidden', !(challengeScore != null && score > challengeScore));
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
     overTitle.textContent = score >= 20 ? 'Lightning reflexes' : 'Too slow';
