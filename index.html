@@ -147,6 +147,7 @@
   .pulse-swatch{ background: radial-gradient(circle at 50% 45%, #FF6B5B 0%, #2A1B4A 70%); }
   .dash-swatch{ background: linear-gradient(135deg, #4EE2A0 0%, #1B1035 75%); }
   .echo-swatch{ background: conic-gradient(from 90deg, #FF6B5B, #4EE2A0, #4DC9FF, #8B6BFF, #FF6B5B); }
+  .snap-swatch{ background: radial-gradient(circle at 60% 40%, #FF5B9F 0%, #1B1035 70%); }
 
   /* --- Today's game --- */
   .featured{
@@ -263,23 +264,33 @@
   </div>
 
   <!-- TODAY'S GAME — update this block each time you post a new game (link, title, description, AND the icon below) -->
-  <a class="featured fade-in" style="animation-delay:.2s" href="/games/echo/">
+  <a class="featured fade-in" style="animation-delay:.2s" href="/games/snap/">
     <div class="featured-icon">
       <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <rect x="0" y="0" width="11" height="11" rx="3" fill="#FF6B5B"/>
-        <rect x="15" y="0" width="11" height="11" rx="3" fill="#4EE2A0"/>
-        <rect x="0" y="15" width="11" height="11" rx="3" fill="#4DC9FF"/>
-        <rect x="15" y="15" width="11" height="11" rx="3" fill="#8B6BFF"/>
+        <circle cx="13" cy="13" r="12" stroke="#FDF6EC" stroke-opacity="0.4" stroke-width="2"/>
+        <circle cx="13" cy="13" r="7" fill="#FF5B9F"/>
       </svg>
     </div>
     <div class="tag"><span class="pulse-dot"></span>Today</div>
-    <h2>Echo</h2>
-    <p>Watch the colors flash, then tap them back in order. Each round adds one more to remember.</p>
+    <h2>Snap</h2>
+    <p>A target pops up somewhere on screen. Tap it before the ring runs out — miss it, and it's over.</p>
     <span class="play">Play now</span>
   </a>
 
   <h3 class="section-label fade-in" style="animation-delay:.26s">Past games</h3>
   <div class="grid fade-in" style="animation-delay:.32s">
+    <a class="card" href="/games/echo/">
+      <div class="swatch echo-swatch">
+        <svg class="icon" width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <rect x="0" y="0" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.95"/>
+          <rect x="15" y="0" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.75"/>
+          <rect x="0" y="15" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.55"/>
+          <rect x="15" y="15" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.35"/>
+        </svg>
+      </div>
+      <h2>Echo</h2>
+      <p>Watch the colors flash, then tap them back in order.</p>
+    </a>
     <a class="card" href="/games/dash/">
       <div class="swatch dash-swatch">
         <svg class="icon" width="26" height="24" viewBox="0 0 26 24" fill="none">
