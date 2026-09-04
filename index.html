@@ -126,11 +126,8 @@
   .card .swatch{
     width:100%; height:96px;
     border-radius: 12px;
-    position:relative;
-    overflow:hidden;
-  }
-  .card .swatch .icon{
-    position:absolute; top:12px; left:12px;
+    display:block;
+    object-fit:cover;
   }
   .card h2{
     font-size: 19px;
@@ -143,11 +140,6 @@
     color: rgba(253,246,236,0.58);
     line-height:1.5;
   }
-  .skyline-swatch{ background: linear-gradient(180deg, #FF8B6B 0%, #8B6BFF 100%); }
-  .pulse-swatch{ background: radial-gradient(circle at 50% 45%, #FF6B5B 0%, #2A1B4A 70%); }
-  .dash-swatch{ background: linear-gradient(135deg, #4EE2A0 0%, #1B1035 75%); }
-  .echo-swatch{ background: conic-gradient(from 90deg, #FF6B5B, #4EE2A0, #4DC9FF, #8B6BFF, #FF6B5B); }
-  .snap-swatch{ background: radial-gradient(circle at 60% 40%, #FF5B9F 0%, #1B1035 70%); }
 
   /* --- Today's game --- */
   .featured{
@@ -171,16 +163,19 @@
     background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, transparent 70%);
     pointer-events:none;
   }
-  .featured-icon{
+  .featured-art{
     position:absolute;
-    top: 36px; right: 36px;
-    width:52px; height:52px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 14px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    top:0; right:0;
+    width:55%; height:100%;
+    object-fit:cover;
+    opacity:0.85;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 40%);
+            mask-image: linear-gradient(to right, transparent 0%, black 40%);
+    pointer-events:none;
+  }
+  .featured-content{
+    position:relative;
+    z-index:1;
   }
   .featured:hover{
     transform: translateY(-3px);
@@ -263,63 +258,36 @@
     <div class="stat-pill fade-in" id="streakPill" style="animation-delay:.17s; display:none;">🔥 <span id="streakCount"></span>-day streak</div>
   </div>
 
-  <!-- TODAY'S GAME — update this block each time you post a new game (link, title, description, AND the icon below) -->
+  <!-- TODAY'S GAME — update this block each time you post a new game (link, title, description, AND the art image below) -->
   <a class="featured fade-in" style="animation-delay:.2s" href="/games/snap/">
-    <div class="featured-icon">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-        <circle cx="13" cy="13" r="12" stroke="#FDF6EC" stroke-opacity="0.4" stroke-width="2"/>
-        <circle cx="13" cy="13" r="7" fill="#FF5B9F"/>
-      </svg>
+    <img class="featured-art" src="/assets/cards/card-snap.png" alt="">
+    <div class="featured-content">
+      <div class="tag"><span class="pulse-dot"></span>Today</div>
+      <h2>Snap</h2>
+      <p>A target pops up somewhere on screen. Tap it before the ring runs out — miss it, and it's over.</p>
+      <span class="play">Play now</span>
     </div>
-    <div class="tag"><span class="pulse-dot"></span>Today</div>
-    <h2>Snap</h2>
-    <p>A target pops up somewhere on screen. Tap it before the ring runs out — miss it, and it's over.</p>
-    <span class="play">Play now</span>
   </a>
 
   <h3 class="section-label fade-in" style="animation-delay:.26s">Past games</h3>
   <div class="grid fade-in" style="animation-delay:.32s">
     <a class="card" href="/games/echo/">
-      <div class="swatch echo-swatch">
-        <svg class="icon" width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <rect x="0" y="0" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.95"/>
-          <rect x="15" y="0" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.75"/>
-          <rect x="0" y="15" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.55"/>
-          <rect x="15" y="15" width="11" height="11" rx="3" fill="#FDF6EC" fill-opacity="0.35"/>
-        </svg>
-      </div>
+      <img class="swatch" src="/assets/cards/card-echo.png" alt="">
       <h2>Echo</h2>
       <p>Watch the colors flash, then tap them back in order.</p>
     </a>
     <a class="card" href="/games/dash/">
-      <div class="swatch dash-swatch">
-        <svg class="icon" width="26" height="24" viewBox="0 0 26 24" fill="none">
-          <rect x="1" y="16" width="24" height="2" fill="#FDF6EC" fill-opacity="0.6"/>
-          <rect x="3" y="4" width="9" height="9" rx="2.5" fill="#FDF6EC" fill-opacity="0.95"/>
-          <path d="M15 16 L20 8 L25 16" stroke="#FDF6EC" stroke-opacity="0.8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
+      <img class="swatch" src="/assets/cards/card-dash.png" alt="">
       <h2>Dash</h2>
       <p>Tap to jump. Clear the obstacles as the pace keeps climbing.</p>
     </a>
     <a class="card" href="/games/pulse/">
-      <div class="swatch pulse-swatch">
-        <svg class="icon" width="26" height="26" viewBox="0 0 26 26" fill="none">
-          <circle cx="13" cy="13" r="11" stroke="#FDF6EC" stroke-opacity="0.9" stroke-width="2"/>
-          <circle cx="13" cy="13" r="4" fill="#FDF6EC"/>
-        </svg>
-      </div>
+      <img class="swatch" src="/assets/cards/card-pulse.png" alt="">
       <h2>Pulse</h2>
       <p>A ring grows from the center — tap the instant it lines up with the target.</p>
     </a>
     <a class="card" href="/games/skyline/">
-      <div class="swatch skyline-swatch">
-        <svg class="icon" width="28" height="26" viewBox="0 0 28 26" fill="none">
-          <rect x="2" y="16" width="24" height="6" rx="1.5" fill="#FDF6EC" fill-opacity="0.95"/>
-          <rect x="6" y="8" width="16" height="6" rx="1.5" fill="#FDF6EC" fill-opacity="0.8"/>
-          <rect x="9" y="0" width="10" height="6" rx="1.5" fill="#FDF6EC" fill-opacity="0.6"/>
-        </svg>
-      </div>
+      <img class="swatch" src="/assets/cards/card-skyline.png" alt="">
       <h2>Skyline</h2>
       <p>Stack the blocks as high as you can. Line it up perfectly to keep your streak alive.</p>
     </a>
