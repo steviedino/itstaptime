@@ -31,6 +31,7 @@
   }
   #wrap{ position:fixed; inset:0; }
   .home-link{
+    touch-action: manipulation;
     position:absolute;
     top: max(20px, env(safe-area-inset-top));
     left: 18px;
@@ -120,6 +121,7 @@
   .stat .lbl{ color: rgba(253,246,236,0.55); font-size:12px; font-weight:600; margin-top: 6px; }
   .btn{
     display:inline-block;
+    touch-action: manipulation;
     background: var(--accent);
     color: var(--ink);
     font-family: inherit;
@@ -157,6 +159,18 @@
     padding: 4px 12px;
     border-radius: 999px;
     margin: -8px 0 18px;
+  }
+  .challenge-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background: var(--accent);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    margin: 4px 0 16px;
   }
   .btn-row{ display:flex; gap:10px; justify-content:center; }
   .btn.secondary{
@@ -196,6 +210,7 @@
   <div class="overlay" id="startScreen">
     <div class="card">
       <h1>Pulse</h1>
+      <p class="challenge-tag hidden" id="challengeLine">🎯 Beat <span id="challengeVal">0</span> to win</p>
       <p>A ring grows from the center. Tap the instant it lines up with the target ring.</p>
       <p class="best-line hidden" id="bestLine">Best: <span id="bestLineVal">0</span></p>
       <button class="btn" id="startBtn">Start</button>
@@ -206,6 +221,7 @@
     <div class="card">
       <h1 id="overTitle">Off beat</h1>
       <div class="new-best hidden" id="newBestTag">New best!</div>
+      <div class="new-best hidden" id="challengeBeatTag">🏆 You beat the challenge!</div>
       <div class="stat-row">
         <div class="stat"><div class="num" id="finalScore">0</div><div class="lbl">Hits</div></div>
         <div class="stat"><div class="num" id="bestScore">0</div><div class="lbl">Best</div></div>
@@ -231,6 +247,9 @@
   const bestLine = document.getElementById('bestLine');
   const bestLineVal = document.getElementById('bestLineVal');
   const newBestTag = document.getElementById('newBestTag');
+  const challengeLine = document.getElementById('challengeLine');
+  const challengeVal = document.getElementById('challengeVal');
+  const challengeBeatTag = document.getElementById('challengeBeatTag');
   const shareBtn = document.getElementById('shareBtn');
   const toastEl = document.getElementById('toast');
   const hint = document.getElementById('hint');
@@ -255,6 +274,11 @@
   if (best > 0){
     bestLineVal.textContent = best;
     bestLine.classList.remove('hidden');
+  }
+  const challengeScore = window.TapTime ? TapTime.getChallenge() : null;
+  if (challengeScore != null){
+    challengeVal.textContent = challengeScore;
+    challengeLine.classList.remove('hidden');
   }
   let radius = 0;
   let ringSpeed = 2.3;
@@ -330,6 +354,7 @@
     const result = TapTime.setBestIfHigher('pulse', score);
     best = result.value;
     newBestTag.classList.toggle('hidden', !(result.isNew && score > 0));
+    challengeBeatTag.classList.toggle('hidden', !(challengeScore != null && score > challengeScore));
     finalScoreEl.textContent = score;
     bestScoreEl.textContent = best;
     overTitle.textContent = score >= 15 ? 'Locked in' : 'Off beat';
